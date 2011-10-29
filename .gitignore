@@ -1,2 +1,3 @@
 /nbproject/private/
-/lib/*.csv
+/lib/output
+/lib/data
