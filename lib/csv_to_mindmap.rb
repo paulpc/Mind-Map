@@ -10,7 +10,7 @@ src_tree={}
 src_app_tree={}
 app_tree={}
 
-CSV.foreach("2011-10-28-data_export.csv",:headers=>true){|row|
+CSV.foreach("./data/2011-10-28-data_export.csv",:headers=>true){|row|
 row_hash=row.to_hash
 # by source IP
 src_tree[row_hash["source"]]={} unless src_tree[row_hash["source"]]
@@ -54,7 +54,7 @@ src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]][row
 
 # adding source tree:
 $spaces=0
-File.open_mm("source_nodes.mm","w") {|mm|
+File.open_mm("./output/source_nodes.mm","w") {|mm|
 	mm.node(:text=>"Source IP Tree") {|src_tree_node|
 		position="right"
 		src_tree.each {|src_ip,src_ip_tree|
@@ -91,7 +91,7 @@ File.open_mm("source_nodes.mm","w") {|mm|
 }
 $spaces=0
 # adding source tree: app_tree[row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]][row_hash["destination"]]
-File.open_mm("applications.mm","w") {|mm|
+File.open_mm("./output/applications.mm","w") {|mm|
 	mm.node(:text=>"Application Tree") {|app_tree_node|
 		position="right"
 		app_tree.each {|app_name,app_name_tree|
@@ -127,7 +127,7 @@ File.open_mm("applications.mm","w") {|mm|
 	}
 }
 
-File.open_mm("source_application.mm","w") {|mm|
+File.open_mm("./output/source_application.mm","w") {|mm|
 	mm.node(:text=>"Source application Tree") {|dir_node|
 		mm.enum_to_mm(src_app_tree) 
   }
