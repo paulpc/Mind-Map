@@ -127,6 +127,13 @@ File.open_mm("applications.mm","w") {|mm|
 	}
 }
 
+File.open_mm("source_application.mm","w") {|mm|
+	mm.node(:text=>"Source application Tree") {|dir_node|
+		mm.enum_to_mm(src_app_tree) 
+  }
+}
+
+=begin
 # adding source>application tree: src_app_tree[row_hash["source"]][row_hash["appName"]][row_hash["destination"]][row_hash["destinationPort"]]
 $spaces=0
 File.open_mm("source_application.mm","w") {|mm|
@@ -164,3 +171,4 @@ File.open_mm("source_application.mm","w") {|mm|
 	}
 }
 
+=end
