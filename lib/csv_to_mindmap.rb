@@ -71,11 +71,17 @@ dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]
 
 $cloud_color={}
 top_values_arry=top_total_traffic.values.sort[-10,10]
-color_coef=(top_values_arry.last-top_values_arry.first)/255
+#color_coef=(top_values_arry.last-top_values_arry.first)/65535
+#p top_values_arry.first
+#p top_values_arry.last
 # going from 255,0,0 to 255,255,0 - 255 values / 10 => stepping by 51
+#available_colors:
+
 top_total_traffic.each {|ip,value|
 if top_values_arry.include?(value)
-$cloud_color[ip]="#EE#{(((value-top_values_arry.first)+1024)/(color_coef+1024)).to_s(16).rjust(2,"0")}55"
+#$cloud_color[ip]="##{((value-top_values_arry.first)/color_coef).to_s(16).rjust(4,"0")}22"
+$cloud_color[ip]="#ff#{(255-(top_values_arry.index(value))*25).to_s(16).rjust(2,'0')}22"
+#p (value)/color_coef
 p value, $cloud_color[ip]
 end
 }
