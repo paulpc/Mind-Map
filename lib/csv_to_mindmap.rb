@@ -8,9 +8,11 @@ require_relative 'mindmap'
 
 src_tree={}
 src_app_tree={}
+dst_app_tree={}
 app_tree={}
+top_total_traffic={}
 
-CSV.foreach("./data/2011-10-28-data_export.csv",:headers=>true){|row|
+CSV.foreach("./data/2011-10-31-data_export.csv",:headers=>true){|row|
 row_hash=row.to_hash
 # by source IP
 src_tree[row_hash["source"]]={} unless src_tree[row_hash["source"]]
@@ -39,6 +41,8 @@ app_tree[row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]][r
 # we might revert to this need be: "startTime"=>{row_hash["startTime"]=>(Time.at(row_hash["startTime"][0..-4].to_i))}}
 
 # by source IP>application>destination>port
+top_total_traffic[row["source"]]=top_total_traffic[row["source"]].to_i+(row_hash["totalSourceBytes"].to_i+row_hash["totalDestinationBytes"].to_i)
+top_total_traffic[row["destination"]]=top_total_traffic[row["destination"]].to_i+(row_hash["totalSourceBytes"].to_i+row_hash["totalDestinationBytes"].to_i)
 src_app_tree[row_hash["direction"]]={} unless src_app_tree[row_hash["direction"]]
 src_app_tree[row_hash["direction"]][row_hash["source"]]={} unless src_app_tree[row_hash["direction"]][row_hash["source"]]
 src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]]={} unless src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]]
@@ -50,7 +54,32 @@ src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]][row
 "packets"=>{"source"=>src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]][row_hash["destination"]][row_hash["destinationPort"]]["packets"]["source"].to_i+row_hash["totalSourcePackets"].to_i,
 "destination"=>src_app_tree[row_hash["direction"]][row_hash["source"]][row_hash["appName"]][row_hash["destination"]][row_hash["destinationPort"]]["packets"]["destination"].to_i+row_hash["totalDestinationPackets"].to_i},
 "startTime"=>{row_hash["startTime"]=>(Time.at((Float(row_hash["startTime"])/1000).to_i))}}
+
+# by dest>application>source>port
+dst_app_tree[row_hash["direction"]]={} unless dst_app_tree[row_hash["direction"]]
+dst_app_tree[row_hash["direction"]][row_hash["destination"]]={} unless dst_app_tree[row_hash["direction"]][row_hash["destination"]]
+dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]]={} unless dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]]
+dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]]={} unless dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]]
+dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]={"bytes"=>{"source"=>0,"destination"=>0},"packets"=>{"source"=>0,"destination"=>0},"startTime"=>{}} unless dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]
+dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]={"bytes"=>{
+"source"=>dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]["bytes"]["source"].to_i+row_hash["totalSourceBytes"].to_i,
+"destination"=>dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]["bytes"]["destination"].to_i+row_hash["totalDestinationBytes"].to_i},
+"packets"=>{"source"=>dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]["packets"]["source"].to_i+row_hash["totalSourcePackets"].to_i,
+"destination"=>dst_app_tree[row_hash["direction"]][row_hash["destination"]][row_hash["appName"]][row_hash["source"]][row_hash["destinationPort"]]["packets"]["destination"].to_i+row_hash["totalDestinationPackets"].to_i},
+"startTime"=>{row_hash["startTime"]=>(Time.at((Float(row_hash["startTime"])/1000).to_i))}}
 }
+
+$cloud_color={}
+top_values_arry=top_total_traffic.values.sort[-10,10]
+color_coef=(top_values_arry.last-top_values_arry.first)/255
+# going from 255,0,0 to 255,255,0 - 255 values / 10 => stepping by 51
+top_total_traffic.each {|ip,value|
+if top_values_arry.include?(value)
+$cloud_color[ip]="#EE#{(((value-top_values_arry.first)+1024)/(color_coef+1024)).to_s(16).rjust(2,"0")}55"
+p value, $cloud_color[ip]
+end
+}
+
 
 # adding source tree:
 $spaces=0
@@ -133,42 +162,8 @@ File.open_mm("./output/source_application.mm","w") {|mm|
   }
 }
 
-=begin
-# adding source>application tree: src_app_tree[row_hash["source"]][row_hash["appName"]][row_hash["destination"]][row_hash["destinationPort"]]
-$spaces=0
-File.open_mm("source_application.mm","w") {|mm|
-	mm.node(:text=>"Source application Tree") {|dir_node|
-		src_app_tree.each {|direction, direction_tree|
-			position=(direction == "R2L" ? "right" : "left")			
-			dir_node.node(:text=>direction,:position=>position,:folded=>"true"){|src_tree_node|
-				direction_tree.each {|src_ip,src_ip_tree|
-					src_tree_node.node(:text=>src_ip,:folded=>"true",:position=>position) {|src_ip_node|
-						src_ip_tree.each {|app_name,app_name_tree|
-							src_ip_node.node(:text=>app_name, :folded=>"true") {|app_name_node|
-								app_name_tree.each {|dst_ip,dst_ip_tree|
-									app_name_node.node(:text=>dst_ip,:folded=>"true") {|dst_ip_node|
-										dst_ip_tree.each {|port,port_tree|
-											dst_ip_node.node(:text=>port,:folded=>"true") {|port_node|
-												port_tree.each {|attribute,attribute_tree|
-													port_node.node(:text=>attribute.to_s){|attribute_node|
-														attribute_tree.each {|name,value|
-															attribute_node.node(:text=>name) {|name_node|
-																name_node.node(:text=>value)
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+File.open_mm("./output/destination_application.mm","w") {|mm|
+	mm.node(:text=>"Destination application Tree") {|dir_node|
+		mm.enum_to_mm(dst_app_tree) 
+  }
 }
-
-=end
