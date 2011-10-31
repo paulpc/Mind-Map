@@ -24,6 +24,7 @@ class File
       cloud=nil
       icons=[]
       options.each {|option,value|
+      if value
         if option==:icon
           value.each {|icon|
             icons.push("#{" ".rjust($spaces+2," ")}<icon BUILTIN=\"#{icon}\"/>")
@@ -40,6 +41,7 @@ class File
         else
           parameters.push("#{option.to_s.upcase}=\"#{value}\"")
         end
+	  end
       }
       if block_given? or not font.empty? or not icons.empty? or (cloud and not cloud.empy?) or not edge.empty?
         self.write("#{' '.rjust($spaces," ")}<node CREATED=\"#{Time.now.to_i}#{rand(899)+100}\" ID=\"scenario_#{options[:text].to_s.gsub(/[\.\ ]/,"_")}#{rand(3000)}\" MODIFIED=\"#{Time.now.to_i}#{rand(999)}\" #{parameters.join(" ")}>\n")
@@ -79,8 +81,9 @@ class File
     def enum_to_mm(enumerable)
       if enumerable.class==Hash
         enumerable.each {|keys,values|
-          folded = ($spaces >= 8 ? "false" : "true")			
-          node(:text=>keys,:folded=>folded){|enu_node|
+          folded = ($spaces >= 8 ? "false" : "true")
+		  ccolor=$cloud_color[keys] if $spaces >= 5
+          node(:text=>keys,:folded=>folded, :cloud_color=>ccolor){|enu_node|
             enum_to_mm(values)
           }
         }
@@ -116,21 +119,5 @@ class File
         
       end
     end
-=begin
-      if structure.length == 0
-return {"bytes"=>{ "source"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["bytes"]["source"].to_i+row_hash["totalSourceBytes"].to_i,
-"destination"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["bytes"]["destination"].to_i+row_hash["totalDestinationBytes"].to_i},
-"packets"=>{"source"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["packets"]["source"].to_i+row_hash["totalSourcePackets"].to_i,
-"destination"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["packets"]["destination"].to_i+row_hash["totalDestinationPackets"].to_i},
-"startTime"=>{row_hash["startTime"]=>(Time.at((Float(row_hash["startTime"])/1000).to_i))}}
 
-        else
-  src_tree[row_hash["source"]]={} unless src_tree[row_hash["source"]]
-  src_tree[row_hash["source"]][row_hash["destination"]]={} unless src_tree[row_hash["source"]][row_hash["destination"]]
-  src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]]={} unless src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]]
-  src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]={"bytes"=>{"source"=>0,"destination"=>0},"packets"=>{"source"=>0,"destination"=>0},"startTime"=>{}} unless src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]
-          
-      end
-    end
-=end
   end
