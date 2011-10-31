@@ -93,7 +93,30 @@ class File
       end
     end
     
-    def create_enum(row_hash,structure)
+    def traverse_tree(parent, nodes,row_hash)
+      if nodes.empty?
+        parent["bytes"]["source"]+=row_hash["totalSourceBytes"].to_i
+        parent["bytes"]["destination"]+=row_hash["totalDestinationBytes"].to_i
+        parent["packets"]["source"]+=row_hash["totalSourcePackets"].to_i
+        parent["packets"]["destination"]+=row_hash["totalDestinationPackets"].to_i
+        parent["startTime"][row_hash["startTime"]]=(Time.at((Float(row_hash["startTime"])/1000).to_i))
+      else
+      next_node=nodes.delete_at(0)
+      if next_node.empty?
+        parent[next_node]={"bytes"=>{"source"=>0,"destination"=>0},"packets"=>{"source"=>0,"destination"=>0},"startTime"=>{}}  unless parent[next_node]
+      else
+      parent[next_node]={} unless parent[next_node]
+      end
+      traverse_tree(parent[next_node],nodes)
+      end
+    end
+    
+    def create_enum(row_hash,known_nodes, unknown_nodes)
+      if unknown_nodes.empty?
+        
+      end
+    end
+=begin
       if structure.length == 0
 return {"bytes"=>{ "source"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["bytes"]["source"].to_i+row_hash["totalSourceBytes"].to_i,
 "destination"=>src_tree[row_hash["source"]][row_hash["destination"]][row_hash["appName"]][row_hash["destinationPort"]]["bytes"]["destination"].to_i+row_hash["totalDestinationBytes"].to_i},
@@ -109,4 +132,5 @@ return {"bytes"=>{ "source"=>src_tree[row_hash["source"]][row_hash["destination"
           
       end
     end
+=end
   end
