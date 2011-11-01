@@ -81,8 +81,8 @@ class File
     def enum_to_mm(enumerable)
       if enumerable.class==Hash
         enumerable.each {|keys,values|
-          folded = ($spaces >= 8 ? "false" : "true")
-		  ccolor=$cloud_color[keys] if $spaces >= 5
+          folded = ($spaces >= 10 ? "false" : "true")
+          ccolor=$cloud_color[keys] if $spaces >= 5 and $cloud_color
           node(:text=>keys,:folded=>folded, :cloud_color=>ccolor){|enu_node|
             enum_to_mm(values)
           }
@@ -96,28 +96,38 @@ class File
       end
     end
     
-    def traverse_tree(parent, nodes,row_hash)
-      if nodes.empty?
-        parent["bytes"]["source"]+=row_hash["totalSourceBytes"].to_i
-        parent["bytes"]["destination"]+=row_hash["totalDestinationBytes"].to_i
-        parent["packets"]["source"]+=row_hash["totalSourcePackets"].to_i
-        parent["packets"]["destination"]+=row_hash["totalDestinationPackets"].to_i
-        parent["startTime"][row_hash["startTime"]]=(Time.at((Float(row_hash["startTime"])/1000).to_i))
-      else
-      next_node=nodes.delete_at(0)
-      if next_node.empty?
-        parent[next_node]={"bytes"=>{"source"=>0,"destination"=>0},"packets"=>{"source"=>0,"destination"=>0},"startTime"=>{}}  unless parent[next_node]
-      else
-      parent[next_node]={} unless parent[next_node]
-      end
-      traverse_tree(parent[next_node],nodes)
-      end
+   end
+  
+  # traverse the binary tree and populate it with values from the row. If I want special functions done with some columns, we'll use them as the last function
+  # Potential commands: 
+  # :count  - counts the occurences for the nodes
+  # :sum    - sums the bits in the last column
+  # :append - appends current value to the values present
+  # :max(n) - adds values to a max array containing n values
+  def traverse_tree(tree_level,nodes,row_hash)
+    if nodes.length==1 and nodes.last.class==Hash
+      nodes.last.each {|instruction,columns|
+      columns.each {|column|      
+        case instruction
+          when :count
+          tree_level[column]=tree_level[column].to_i+1
+        when :sum
+          tree_level[column]=tree_level[column].to_i+row_hash[column].to_i
+        when :append
+          tree_level[column]=tree_level[column].to_a.push(row_hash[column])
+        end
+      }
+      }
+      
+    elsif nodes.length==2 and nodes.last.class!=Hash
+      tree_level[row_hash[nodes.first]]=row_hash[nodes.last]
+#    elsif nodes.length==2
+#      current_node=nodes.delete_at(0)
+#      #tree_level[row_hash[current_node]]={} unless tree_level[row_hash[current_node]]
+#      traverse_tree(tree_level[row_hash[current_node]],nodes, row_hash)
+    elsif (nodes.length>1 and nodes.last.class==Hash) or (nodes.length>1 and nodes.last.class!=Hash)
+      current_node=nodes.delete_at(0)
+      tree_level[row_hash[current_node]]={} unless tree_level[row_hash[current_node]]
+      traverse_tree(tree_level[row_hash[current_node]],nodes, row_hash)
     end
-    
-    def create_enum(row_hash,known_nodes, unknown_nodes)
-      if unknown_nodes.empty?
-        
-      end
     end
-
-  end
