@@ -103,31 +103,33 @@ class File
   # :count  - counts the occurences for the nodes
   # :sum    - sums the bits in the last column
   # :append - appends current value to the values present
-  # :max(n) - adds values to a max array containing n values
+  # :max    - reassigns the value as long as the value is greater than the current one
+  # :min    - reassigns the value as long as the value is lesser than the current one
   def traverse_tree(tree_level,nodes,row_hash)
     if nodes.length==1 and nodes.last.class==Hash
       nodes.last.each {|instruction,columns|
       columns.each {|column|      
         case instruction
-          when :count
+        when :count
           tree_level[column]=tree_level[column].to_i+1
         when :sum
           tree_level[column]=tree_level[column].to_i+row_hash[column].to_i
         when :append
           tree_level[column]=tree_level[column].to_a.push(row_hash[column])
+        when :max
+          tree_level[column]=row_hash[column] if not tree_level[column] or row_hash[column]>tree_level[column].to_s
+        when :min
+          tree_level[column]=row_hash[column] if not tree_level[column] or row_hash[column]<tree_level[column].to_s 
         end
       }
       }
       
     elsif nodes.length==2 and nodes.last.class!=Hash
       tree_level[row_hash[nodes.first]]=row_hash[nodes.last]
-#    elsif nodes.length==2
-#      current_node=nodes.delete_at(0)
-#      #tree_level[row_hash[current_node]]={} unless tree_level[row_hash[current_node]]
-#      traverse_tree(tree_level[row_hash[current_node]],nodes, row_hash)
     elsif (nodes.length>1 and nodes.last.class==Hash) or (nodes.length>1 and nodes.last.class!=Hash)
       current_node=nodes.delete_at(0)
       tree_level[row_hash[current_node]]={} unless tree_level[row_hash[current_node]]
       traverse_tree(tree_level[row_hash[current_node]],nodes, row_hash)
     end
     end
+    
