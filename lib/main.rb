@@ -22,7 +22,47 @@ CSV.foreach(filename,:headers=>true){|row|
   traverse_tree(app_count,["appName",{:count=>["magnitude"]}],row_hash)
   traverse_tree(port_count,["destinationPort",{:count=>["magnitude"]}],row_hash)
 }
-p app_count
+
+top_ips_val=[]
+ips_count.values.each {|magnitude_hash|
+  magnitude_hash.each {|magnitude,value|
+    top_ips_val+=[value]
+    top_ips_val=top_ips_val.sort.reverse[0,10] if top_ips_val.length>10
+  }
+}
+top_app_val=[]
+app_count.values.each {|magnitude_hash|
+  magnitude_hash.each {|magnitude,value|
+    top_app_val+=[value]
+    top_app_val=top_app_val.sort.reverse[0,10] if top_app_val.length>10
+  }
+}
+
+top_port_val=[]
+port_count.values.each {|magnitude_hash|
+  magnitude_hash.each {|magnitude,value|
+    top_port_val+=[value]
+    top_port_val=top_port_val.sort.reverse[0,10] if top_port_val.length>10
+  }
+}
+
+top_ips={}
+ips_count.each {|ip,magnitude_hash|
+  top_ips[ip]=magnitude_hash["magnitude"] if top_ips_val.include?(magnitude_hash["magnitude"])
+}
+
+top_apps={}
+app_count.each {|app,magnitude_hash|
+  top_apps[app]=magnitude_hash["magnitude"] if top_app_val.include?(magnitude_hash["magnitude"])
+}
+
+top_ports={}
+port_count.each {|port,magnitude_hash|
+  top_ports[port]=magnitude_hash["magnitude"] if top_port_val.include?(magnitude_hash["magnitude"])
+}
+
+
+
 dst_app_tree={}
 src_app_tree={}
 app_tree={}
